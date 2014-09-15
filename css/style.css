@@ -309,7 +309,7 @@ input { outline: none; }
 #social-icons ul li a {
 	color: #fff;
 	font-size: 30px;
-	margin: 0px 8px;
+	margin: 0px 20px;
 	line-height: 40px;
 }
 #social-icons ul li a:hover { opacity:0.8; }
