@@ -1,1 +1,14 @@
-<iframe src="http://laloux.me/agenda.html"  style="width:100%; height:100%;"></iframe>
+<html> 
+  <head> 
+    <script src="jquery.js"></script> 
+    <script> 
+    $(function(){
+      $("#includedContent").load("http://laloux.me/agenda.html"); 
+    });
+    </script> 
+  </head> 
+
+  <body> 
+     <div id="includedContent"></div>
+  </body> 
+</html>
