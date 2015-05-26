@@ -1,0 +1,67 @@
+==================================================================
+https://keybase.io/jflaloux
+--------------------------------------------------------------------
+
+I hereby claim:
+
+  * I am an admin of http://laloux.me
+  * I am jflaloux (https://keybase.io/jflaloux) on keybase.
+  * I have a public key with fingerprint A8FA AE43 A740 B9A7 4D8F  CF08 69FF 8E6E 2B83 314D
+
+To do so, I am signing this object:
+
+{
+    "body": {
+        "key": {
+            "fingerprint": "a8faae43a740b9a74d8fcf0869ff8e6e2b83314d",
+            "host": "keybase.io",
+            "key_id": "69ff8e6e2b83314d",
+            "kid": "0101f93f4224849dca42a492fc92bef2789dffcd77b8003f5fac392092e76fab4e220a",
+            "uid": "4c1d2e855dd966926b7c9723fef8ae19",
+            "username": "jflaloux"
+        },
+        "service": {
+            "hostname": "laloux.me",
+            "protocol": "http:"
+        },
+        "type": "web_service_binding",
+        "version": 1
+    },
+    "ctime": 1432662353,
+    "expire_in": 157680000,
+    "prev": "192a44e7540ed45f606c7176df5836f839085d11032daf464cfe17ce4381b198",
+    "seqno": 3,
+    "tag": "signature"
+}
+
+which yields the signature:
+
+-----BEGIN PGP MESSAGE-----
+Version: Keybase OpenPGP v2.0.8
+Comment: https://keybase.io/crypto
+
+yMIbAnicbZJbbAxRGMd33dqt1u2FKMVBpHbVzJkzlzMqaFwaPGhjI1Gxncs5u9Pd
+zqzd2bW6SD3UE4lbVB+oSDaiiSalEiKilITUNY1LwgN9aIN4KJWIF85UvXk5l//3
+/35fvu+cB2WTfSX+OflVb3+U5db4B+6tzfjCZk9dHuiOeQCoeRAn4xu17ChJJVOW
+7QIVaArVNIIETUacjtlqKtSgnCJhShUiEagrgsAjE4RAzEl7GQyja2lSZTlMY5eI
+ZTL1P/74eIDjOZ5igSIIkYKwaWgIaghDamCoEwplBZuUGqYs6wrHCVSkmiFgyGFI
+ZIlqOiIQchrDZcZxyOBNSBRRNE0sSRhKumxgGQqUUEUjPPaMaZKytWbC3E00oSWc
+TA4cCgGmZi2DeCPwOplw/I1XsXMIJFOO6xhOgskx102qXpZ7IOnZ9hM9MgGI6JZt
+shmyhCxJpS3HBirPnIZreUQeCVCSoCAKIUBySStFIpbnEGWJ9cdxXhmSZUgeszkg
+IouIIyYSqcRJhszLkklFRZCoImBOEU2e5wRoahRJyKCElw32Vgqv81gBXkv7bAeo
+rJKrRRkybUVtzc2kCDh0v2/PFJ+/xDdt6iTvF/hKArP+/Y3T8WLfxcubb6sfP9cv
+EmtqvgaWLN0IyIqKph/+4s47pVfbjrR2tLWsCd46Xr//W6LRqN0Ou85nz/VPeZro
+7xkJqovtx+rLLQOodOVo7EXzzDfG3tUPT3T3zuy8i9vqDs9othZufV95Izj4bP3B
+wIbLtf6TlRca+joGX3wodO2Ay9uDyxYETl7cN22o+9aj17+KOgPVV658WNadmT3S
+ONaRHw5VVHRdxZ3fWzcvtSrLyT1h06tt11tc7vdY+akv8Xmzet4Uth61B37OeRK+
+ljtrR0/hXbWpuZn+8O53seJjuV9FLQXuZvuu3h3Dl+aTLZGD66rz4aHp3xtGq/XC
+zudN7YlPmTPCH2+yHdU=
+=GfjD
+-----END PGP MESSAGE-----
+
+And finally, I am proving ownership of this host by posting or
+appending to this document.
+
+View my publicly-auditable identity here: https://keybase.io/jflaloux
+
+==================================================================
