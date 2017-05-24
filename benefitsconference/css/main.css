@@ -769,7 +769,7 @@ a:focus{
 =            others-page            =
 =====================================*/
 .other-page-nav.main-nav{
-	background: url(../img/services/breadcrumbs.jpg) no-repeat center center;
+	/*background: url(../img/services/breadcrumbs.jpg) no-repeat center center;*/
 	background-size: cover;
 	height: 80px;
 }
