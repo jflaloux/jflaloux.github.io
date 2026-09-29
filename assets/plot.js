@@ -1,4 +1,4 @@
-/* laloux.me — a scatter plot whose points sort themselves into a word. */
+/* laloux.me — one set of data points that keeps rearranging itself into different charts. */
 (() => {
   "use strict";
 
@@ -9,8 +9,10 @@
   const word = canvas.dataset.word || "laloux";
   const statusEl = document.getElementById("status");
   const countEl = document.getElementById("count");
-  const replayBtn = document.getElementById("replay");
+  const figEl = document.getElementById("fig");
+  const nextBtn = document.getElementById("next");
   const reduceMQ = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const touchMQ = window.matchMedia("(hover: none) and (pointer: coarse)");
 
   const css = getComputedStyle(document.documentElement);
   const tok = (name) => css.getPropertyValue(name).trim();
@@ -24,8 +26,17 @@
   const DISPLAY = tok("--font-display");
   const MONO = tok("--font-mono");
 
-  const HOLD_MS = 900;     // time the raw scatter is shown before sorting
-  const SWEEP_MS = 1100;   // left-to-right stagger of the sort
+  // The charts the points cycle through. `hold` is how long each one stays (ms, transition included).
+  const FORMS = [
+    { id: "scatter", label: "scatter plot", hold: 3600 },
+    { id: "word", label: `“${word}”`, hold: 6500 },
+    { id: "histogram", label: "histogram", hold: 3800 },
+    { id: "series", label: "time series", hold: 3800 },
+    { id: "donut", label: "donut chart", hold: 3800 },
+  ];
+  const WORD = 1;
+  const INTRO_MS = 900;    // the opening scatter plot, before the name forms
+  const SWEEP_MS = 1000;   // stagger of a transition across the plot
   const MAX_POINTS = 3200;
 
   const fmt = new Intl.NumberFormat("en-US");
@@ -33,17 +44,23 @@
   let W = 0, H = 0, dpr = 1;
   let pad = { l: 34, r: 8, t: 8, b: 26 };
   let pts = [];
-  let t0 = 0;
-  let running = false;
-  let phase = "";
-  let pointer = null;      // {x, y} in CSS px, mouse only
-  let highlight = -1;
+  let targets = {};        // form id -> { pts: [{x, y}], r: dot radius }
+  let formIdx = 0;
   let radius = 2;
+  let trendAlpha = 0;
+  let running = false;
+  let settled = false;
+  let pointer = null;      // {x, y} in CSS px: mouse hover or a finger on the plot
+  let down = null;         // pointerdown info, to tell a tap from a drag
+  let highlight = -1;
+  let timer = 0;
+  let intro = true;
 
   /* ---------- helpers ---------- */
 
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
   const reduced = () => reduceMQ.matches;
+  const autoCycle = () => touchMQ.matches && !reduced();
 
   function gauss() {
     let u = 0, v = 0;
@@ -52,22 +69,24 @@
     return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
   }
 
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = (Math.random() * (i + 1)) | 0;
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
   function pickSeries() {
     const r = Math.random();
     return r < WEIGHTS[0] ? 0 : r < WEIGHTS[0] + WEIGHTS[1] ? 1 : 2;
   }
 
-  // Trend line of the "raw" dataset, as a fraction of plot height from the top.
-  const trend = (u) => 0.8 - 0.58 * u;
+  const byX = (a, b) => a.x - b.x;
+  const dotR = (pitch) => clamp(pitch * 0.34, 1.1, 3.2);
 
-  function setPhase(p) {
-    if (p === phase) return;
-    phase = p;
-    if (statusEl) {
-      statusEl.dataset.phase = p;
-      statusEl.textContent = p;
-    }
-  }
+  // Trend line of the scatter plot, as a fraction of plot height from the top.
+  const trend = (u) => 0.8 - 0.58 * u;
 
   /* ---------- layout ---------- */
 
@@ -86,7 +105,40 @@
     return { x: pad.l, y: pad.t, w: W - pad.l - pad.r, h: H - pad.t - pad.b };
   }
 
-  function sampleTargets() {
+  // Hex grid of dots with spacing `p` inside a shape.
+  function hexGrid(b, p, inside) {
+    const out = [];
+    const rowH = p * 0.866;
+    let row = 0;
+    for (let y = b.y0 + rowH / 2; y < b.y1; y += rowH, row++) {
+      const shift = row % 2 ? p / 2 : 0;
+      for (let x = b.x0 + p / 2 + shift; x < b.x1; x += p) {
+        if (inside(x, y)) out.push({ x, y });
+      }
+    }
+    return out;
+  }
+
+  // Exactly n dots filling a shape of roughly `area` px².
+  function fillExact(inside, n, area, bounds) {
+    let p = Math.sqrt(area / Math.max(1, n * 0.866)) * 1.08;
+    let grid = [];
+    for (let i = 0; i < 200; i++) {
+      grid = hexGrid(bounds, p, inside);
+      if (grid.length >= n) break;
+      p *= 0.99;
+    }
+    grid = shuffle(grid).slice(0, n);
+    while (grid.length < n && grid.length) {
+      const q = grid[(Math.random() * grid.length) | 0];
+      grid.push({ x: q.x + (Math.random() - 0.5) * p, y: q.y + (Math.random() - 0.5) * p });
+    }
+    return { pts: grid, p };
+  }
+
+  /* ---------- the charts ---------- */
+
+  function wordForm() {
     const box = plotBox();
     const ow = Math.max(1, Math.floor(box.w));
     const oh = Math.max(1, Math.floor(box.h));
@@ -111,85 +163,228 @@
     o.fillText(word, ow / 2, (oh - (asc + desc)) / 2 + asc);
 
     const data = o.getImageData(0, 0, ow, oh).data;
-    const inside = (x, y) => {
-      x = x | 0; y = y | 0;
-      if (x < 0 || y < 0 || x >= ow || y >= oh) return false;
-      return data[(y * ow + x) * 4 + 3] > 140;
-    };
-
     let filled = 0;
     for (let i = 3; i < data.length; i += 16) if (data[i] > 140) filled++;
     filled *= 4;
 
     const step = Math.max(W < 520 ? 3.6 : 4.4, Math.sqrt(filled / MAX_POINTS) * 1.02);
-    const rowH = step * 0.866;
-    const out = [];
-    let row = 0;
-    for (let y = rowH / 2; y < oh; y += rowH, row++) {
-      const shift = row % 2 ? step / 2 : 0;
-      for (let x = step / 2 + shift; x < ow; x += step) {
-        if (inside(x, y)) {
-          out.push({
-            x: box.x + x + (Math.random() - 0.5) * step * 0.22,
-            y: box.y + y + (Math.random() - 0.5) * step * 0.22,
-          });
-        }
-      }
-    }
-    radius = clamp(step * 0.34, 1.2, 3.2);
-    return out;
-  }
-
-  function rawPosition() {
-    const box = plotBox();
-    const u = Math.random();
-    return {
-      x: box.x + (0.025 + 0.95 * u) * box.w,
-      y: box.y + clamp(trend(u) + gauss() * 0.085, 0.03, 0.97) * box.h,
+    const inside = (x, y) => {
+      x = x | 0; y = y | 0;
+      if (x < 0 || y < 0 || x >= ow || y >= oh) return false;
+      return data[(y * ow + x) * 4 + 3] > 140;
     };
-  }
-
-  function build(animate) {
-    measure();
-    const targets = sampleTargets().sort((a, b) => a.x - b.x);
-    const starts = targets.map(rawPosition).sort((a, b) => a.x - b.x);
-    const box = plotBox();
-
-    pts = targets.map((t, i) => ({
-      sx: starts[i].x, sy: starts[i].y,
-      tx: t.x, ty: t.y,
-      x: animate ? starts[i].x : t.x,
-      y: animate ? starts[i].y : t.y,
-      vx: 0, vy: 0,
-      s: pickSeries(),
-      d: HOLD_MS + ((t.x - box.x) / box.w) * SWEEP_MS + Math.random() * 240,
+    const out = hexGrid({ x0: 0, y0: 0, x1: ow, y1: oh }, step, inside).map((q) => ({
+      x: box.x + q.x + (Math.random() - 0.5) * step * 0.22,
+      y: box.y + q.y + (Math.random() - 0.5) * step * 0.22,
     }));
-
-    if (countEl) countEl.textContent = fmt.format(pts.length);
-    t0 = performance.now();
-    if (animate) {
-      setPhase("unsorted");
-      kick();
-    } else {
-      pts.forEach((p) => (p.d = -1));
-      setPhase("sorted");
-      draw(performance.now());
-    }
+    return { pts: out.sort(byX), r: dotR(step) };
   }
 
-  function replay() {
-    if (!pts.length) return;
+  function scatterForm(n, r) {
     const box = plotBox();
-    const fresh = pts.map(rawPosition).sort((a, b) => a.x - b.x);
-    // Keep the x-order pairing so points travel mostly vertically, like a column sort.
-    pts.sort((a, b) => a.tx - b.tx);
-    pts.forEach((p, i) => {
-      p.sx = fresh[i].x; p.sy = fresh[i].y;
-      p.d = HOLD_MS + ((p.tx - box.x) / box.w) * SWEEP_MS + Math.random() * 240;
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const u = Math.random();
+      out.push({
+        x: box.x + (0.025 + 0.95 * u) * box.w,
+        y: box.y + clamp(trend(u) + gauss() * 0.085, 0.03, 0.97) * box.h,
+      });
+    }
+    return { pts: out.sort(byX), r };
+  }
+
+  function seriesForm(n, r) {
+    const box = plotBox();
+    const f = (u) => 0.5 - 0.2 * Math.sin(2 * Math.PI * u * 1.15 + 0.5) - 0.09 * Math.sin(2 * Math.PI * u * 3.4 + 1.2);
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      const u = 0.02 + 0.96 * Math.random();
+      out.push({
+        x: box.x + u * box.w,
+        y: box.y + clamp(f(u) + gauss() * 0.032, 0.03, 0.97) * box.h,
+      });
+    }
+    return { pts: out.sort(byX), r };
+  }
+
+  function histogramForm(n) {
+    const box = plotBox();
+    const bins = W < 520 ? 11 : 19;
+    const binW = box.w / bins;
+    const g = [];
+    for (let i = 0; i < bins; i++) {
+      const u = (i + 0.5) / bins;
+      g.push(Math.exp(-((u - 0.44) ** 2) / (2 * 0.16 ** 2)) + 0.3 * Math.exp(-((u - 0.8) ** 2) / (2 * 0.07 ** 2)));
+    }
+    const sum = g.reduce((a, b) => a + b, 0);
+    const raw = g.map((v) => (v / sum) * n);
+    const counts = raw.map(Math.floor);
+    let rest = n - counts.reduce((a, b) => a + b, 0);
+    raw.map((v, i) => [v - Math.floor(v), i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => {
+      if (rest > 0) { counts[i]++; rest--; }
     });
-    t0 = performance.now();
-    setPhase("unsorted");
-    kick();
+    const most = Math.max(...counts);
+
+    let p = Math.min(binW, box.h);
+    let cols = 1;
+    for (let i = 0; i < 200; i++) {
+      cols = Math.max(1, Math.floor((binW * 0.8) / p));
+      if (Math.ceil(most / cols) * p <= box.h * 0.88 || p < 1.5) break;
+      p *= 0.97;
+    }
+
+    const out = [];
+    counts.forEach((c, i) => {
+      const cx = box.x + (i + 0.5) * binW;
+      const x0 = cx - ((cols - 1) * p) / 2;
+      for (let k = 0; k < c; k++) {
+        out.push({ x: x0 + (k % cols) * p, y: box.y + box.h - p * 0.6 - Math.floor(k / cols) * p });
+      }
+    });
+    return { pts: out.sort(byX), r: dotR(p) };
+  }
+
+  // Ring split by series, so the legend reads as the key of the donut.
+  function donutForm(counts) {
+    const box = plotBox();
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.h / 2;
+    const R = Math.min(box.w, box.h) * 0.47;
+    const r0 = R * 0.56;
+    const n = counts.reduce((a, b) => a + b, 0);
+    const gap = 0.05;
+    const angleOf = (x, y) => {
+      const a = Math.atan2(x - cx, -(y - cy));
+      return a < 0 ? a + Math.PI * 2 : a;
+    };
+    const out = [];
+    let start = 0;
+    let pitch = 4;
+    counts.forEach((c) => {
+      const a0 = start + gap / 2;
+      const a1 = start + (c / n) * Math.PI * 2 - gap / 2;
+      start += (c / n) * Math.PI * 2;
+      if (c <= 0) return;
+      const inside = (x, y) => {
+        const d = Math.hypot(x - cx, y - cy);
+        if (d < r0 || d > R) return false;
+        const a = angleOf(x, y);
+        return a >= a0 && a <= a1;
+      };
+      const area = (Math.max(0.01, a1 - a0) / 2) * (R * R - r0 * r0);
+      const seg = fillExact(inside, c, area, { x0: cx - R, y0: cy - R, x1: cx + R, y1: cy + R });
+      pitch = seg.p;
+      seg.pts.sort((a, b) => angleOf(a.x, a.y) - angleOf(b.x, b.y));
+      out.push(...seg.pts);
+    });
+    return { pts: out, r: dotR(pitch), cx, cy };
+  }
+
+  /* ---------- build + assignment ---------- */
+
+  function build() {
+    measure();
+    const w = wordForm();
+    const n = w.pts.length;
+
+    if (pts.length !== n) {
+      pts = w.pts.map(() => ({ x: 0, y: 0, vx: 0, vy: 0, hx: 0, hy: 0, tx: 0, ty: 0, s: pickSeries(), d: 0 }));
+    }
+    // Keep points of the same series together so the donut can be dealt out in order.
+    const counts = [0, 0, 0];
+    pts.forEach((p) => counts[p.s]++);
+
+    targets = {
+      word: w,
+      scatter: scatterForm(n, w.r),
+      series: seriesForm(n, w.r),
+      histogram: histogramForm(n),
+      donut: donutForm(counts),
+    };
+
+    if (countEl) countEl.textContent = fmt.format(n);
+    assign(formIdx, false);
+  }
+
+  function assign(i, animate, fromDonut = false) {
+    const form = FORMS[i];
+    const T = targets[form.id];
+    if (!T) return;
+    const box = plotBox();
+    const now = performance.now();
+
+    if (form.id === "donut") {
+      const groups = [[], [], []];
+      pts.forEach((p) => groups[p.s].push(p));
+      let k = 0;
+      groups.forEach((g) => {
+        g.sort(byX).forEach((p) => {
+          const t = T.pts[k++];
+          p.tx = t.x; p.ty = t.y;
+        });
+      });
+    } else {
+      // Out of the donut the series sit in blocks; deal the points out at random so the colors mix again.
+      const order = fromDonut ? shuffle(pts.slice()) : pts.slice().sort(byX);
+      order.forEach((p, k) => {
+        const t = T.pts[k];
+        p.tx = t.x; p.ty = t.y;
+      });
+    }
+
+    pts.forEach((p) => {
+      p.hx = p.x; p.hy = p.y;
+      if (!animate) {
+        p.x = p.tx; p.y = p.ty; p.vx = 0; p.vy = 0; p.d = 0;
+        return;
+      }
+      let f;
+      if (form.id === "donut") {
+        const a = Math.atan2(p.tx - T.cx, -(p.ty - T.cy));
+        f = (a < 0 ? a + Math.PI * 2 : a) / (Math.PI * 2);
+      } else {
+        f = (p.tx - box.x) / box.w;
+      }
+      p.d = now + f * SWEEP_MS + Math.random() * 220;
+    });
+
+    if (!animate) {
+      radius = T.r;
+      trendAlpha = form.id === "scatter" ? 1 : 0;
+    }
+    settled = !animate;
+    caption();
+    if (animate) kick();
+    else draw();
+  }
+
+  function goTo(i) {
+    const fromDonut = FORMS[formIdx].id === "donut";
+    formIdx = (i + FORMS.length) % FORMS.length;
+    assign(formIdx, !reduced(), fromDonut);
+    schedule();
+  }
+
+  function schedule() {
+    clearTimeout(timer);
+    if (reduced()) return;
+    if (!autoCycle() && !(intro && formIdx === 0)) return;
+    const wait = intro && formIdx === 0 ? INTRO_MS : FORMS[formIdx].hold;
+    const fire = () => {
+      if (document.hidden) { timer = setTimeout(fire, 800); return; }
+      intro = false;
+      goTo(formIdx + 1);
+    };
+    timer = setTimeout(fire, wait);
+  }
+
+  function caption() {
+    const form = FORMS[formIdx];
+    if (figEl) figEl.textContent = `Fig. ${formIdx + 1}`;
+    if (statusEl) {
+      statusEl.textContent = form.label;
+      statusEl.dataset.phase = settled ? "settled" : "moving";
+    }
   }
 
   /* ---------- simulation ---------- */
@@ -201,23 +396,22 @@
   }
 
   function tick(now) {
-    const t = now - t0;
     let moving = false;
-    let started = 0;
     const R = 70;
-    const still = reduced();
+    const push = pointer && !reduced();
+    const form = FORMS[formIdx];
+    const T = targets[form.id];
 
     for (let i = 0; i < pts.length; i++) {
       const p = pts[i];
-      const go = t >= p.d;
-      if (go) started++;
-      const gx = go ? p.tx : p.sx;
-      const gy = go ? p.ty : p.sy;
+      const go = now >= p.d;
+      const gx = go ? p.tx : p.hx;
+      const gy = go ? p.ty : p.hy;
 
       p.vx = (p.vx + (gx - p.x) * 0.055) * 0.83;
       p.vy = (p.vy + (gy - p.y) * 0.055) * 0.83;
 
-      if (pointer && !still) {
+      if (push) {
         const dx = p.x - pointer.x;
         const dy = p.y - pointer.y;
         const d2 = dx * dx + dy * dy;
@@ -239,23 +433,26 @@
       }
     }
 
-    if (started === 0) setPhase("unsorted");
-    else if (moving) setPhase("sorting");
+    const rTarget = T ? T.r : radius;
+    radius += (rTarget - radius) * 0.12;
+    const tTarget = form.id === "scatter" ? 1 : 0;
+    trendAlpha += (tTarget - trendAlpha) * 0.08;
+    if (Math.abs(rTarget - radius) > 0.01 || Math.abs(tTarget - trendAlpha) > 0.01) moving = true;
+    else { radius = rTarget; trendAlpha = tTarget; }
 
-    const progress = pts.length ? started / pts.length : 1;
-    draw(now, 1 - clamp(progress * 1.6, 0, 1));
+    draw();
 
     if (moving) {
       requestAnimationFrame(tick);
     } else {
       running = false;
-      setPhase("sorted");
+      if (!settled) { settled = true; caption(); }
     }
   }
 
   /* ---------- drawing ---------- */
 
-  function draw(now, trendAlpha = 0) {
+  function draw() {
     const box = plotBox();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
@@ -286,7 +483,6 @@
     for (let v = 0; v <= 100; v += 20) {
       ctx.fillText(String(v), box.x - 7, box.y + box.h * (1 - v / 100));
     }
-    ctx.textAlign = "center";
     ctx.textBaseline = "top";
     for (let v = 0; v <= 100; v += xStep) {
       const x = box.x + box.w * (v / 100);
@@ -330,7 +526,7 @@
     }
     ctx.globalAlpha = 1;
 
-    // fitted trend line of the raw data, fading as the sort begins
+    // fitted trend line, shown with the scatter plot
     if (trendAlpha > 0.01) {
       ctx.save();
       ctx.globalAlpha = trendAlpha * 0.8;
@@ -394,54 +590,72 @@
     return { x: e.clientX - rect.left, y: e.clientY - rect.top };
   }
 
-  canvas.addEventListener("pointermove", (e) => {
-    if (e.pointerType !== "mouse") return;
-    pointer = localPoint(e);
+  function refresh() {
     if (running) return;
-    if (reduced()) draw(performance.now());
+    if (reduced()) draw();
     else kick();
-  });
+  }
 
-  canvas.addEventListener("pointerleave", () => {
-    pointer = null;
-    if (!running) draw(performance.now());
-  });
-
-  // Touch: a tap sends a ripple through the points.
   canvas.addEventListener("pointerdown", (e) => {
-    if (e.pointerType === "mouse" || reduced()) return;
-    const p0 = localPoint(e);
-    const R = 90;
-    for (const p of pts) {
-      const dx = p.x - p0.x, dy = p.y - p0.y;
-      const d = Math.hypot(dx, dy);
-      if (d < R && d > 0.01) {
-        const f = (1 - d / R) * 14;
-        p.vx += (dx / d) * f;
-        p.vy += (dy / d) * f;
-      }
+    down = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
+    if (e.pointerType !== "mouse") {
+      pointer = localPoint(e);
+      if (canvas.setPointerCapture) canvas.setPointerCapture(e.pointerId);
+      refresh();
     }
-    kick();
   });
 
-  if (replayBtn) {
-    replayBtn.hidden = reduced();
-    replayBtn.addEventListener("click", replay);
+  canvas.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse" && !down) return;
+    pointer = localPoint(e);
+    refresh();
+  });
+
+  function release(e, cancelled) {
+    const d = down;
+    down = null;
+    if (e.pointerType !== "mouse") {
+      pointer = null;
+      if (!running) draw();
+    }
+    if (cancelled || !d || d.id !== e.pointerId) return;
+    const moved = Math.hypot(e.clientX - d.x, e.clientY - d.y);
+    if (moved < 10 && performance.now() - d.t < 450) {
+      intro = false;
+      goTo(formIdx + 1);
+    }
+  }
+
+  canvas.addEventListener("pointerup", (e) => release(e, false));
+  canvas.addEventListener("pointercancel", (e) => release(e, true));
+  canvas.addEventListener("pointerleave", (e) => {
+    if (e.pointerType !== "mouse") return;
+    pointer = null;
+    if (!running) draw();
+  });
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", () => {
+      intro = false;
+      goTo(formIdx + 1);
+    });
   }
 
   document.querySelectorAll("[data-series]").forEach((el) => {
     const s = Number(el.dataset.series);
-    const on = () => { highlight = s; if (!running) draw(performance.now()); };
-    const off = () => { highlight = -1; if (!running) draw(performance.now()); };
+    const on = () => { highlight = s; if (!running) draw(); };
+    const off = () => { highlight = -1; if (!running) draw(); };
     el.addEventListener("pointerenter", on);
     el.addEventListener("pointerleave", off);
     el.addEventListener("focus", on);
     el.addEventListener("blur", off);
   });
 
-  reduceMQ.addEventListener?.("change", () => {
-    if (replayBtn) replayBtn.hidden = reduced();
-  });
+  const onPrefChange = () => schedule();
+  if (reduceMQ.addEventListener) {
+    reduceMQ.addEventListener("change", onPrefChange);
+    touchMQ.addEventListener("change", onPrefChange);
+  }
 
   /* ---------- boot ---------- */
 
@@ -451,7 +665,7 @@
     if (Math.abs(rect.width - lastW) < 2 && Math.abs(rect.height - lastH) < 2) return;
     lastW = rect.width; lastH = rect.height;
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => build(false), 140);
+    resizeTimer = setTimeout(build, 140);
   });
 
   const fontReady = document.fonts && document.fonts.load
@@ -464,7 +678,9 @@
   fontReady.catch(() => {}).then(() => {
     const rect = canvas.getBoundingClientRect();
     lastW = rect.width; lastH = rect.height;
-    build(!reduced());
+    if (reduced()) { formIdx = WORD; intro = false; }
+    build();
+    schedule();
     ro.observe(canvas);
   });
 })();

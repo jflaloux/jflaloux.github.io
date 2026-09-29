@@ -57,13 +57,13 @@
           <canvas id="plot" data-word="laloux" aria-hidden="true"></canvas>
         </div>
         <figcaption class="mono">
-          <b>Fig. 1</b>
+          <b id="fig">Fig. 1</b>
           <span>n = <span id="count">0</span></span>
-          <span class="status" id="status" data-phase="unsorted" aria-live="polite">unsorted</span>
-          <span class="sr-only">A scatter plot of random data points that sort themselves into the word laloux.</span>
-          <button class="replay" id="replay" type="button">
-            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.6 6.2A6 6 0 1 0 14 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M14.2 2.4v4.2H10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            Replay
+          <span class="status" id="status" data-phase="settled">scatter plot</span>
+          <span class="sr-only">An animated chart: the same data points rearrange into a scatter plot, the word laloux, a histogram, a time series and a donut chart. Tap the chart or press Next to switch.</span>
+          <button class="next" id="next" type="button" aria-label="Show the next chart">
+            Next
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9.5 4l4 4-4 4"/></svg>
           </button>
         </figcaption>
       </figure>
