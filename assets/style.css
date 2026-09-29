@@ -94,7 +94,9 @@ main { display: contents; }
   text-decoration: none;
   font-weight: 500;
 }
-.topbar a:hover { text-decoration: underline; text-underline-offset: 3px; }
+@media (hover: hover) {
+  .topbar a:hover { text-decoration: underline; text-underline-offset: 3px; }
+}
 
 .clock { margin: 0; font-variant-numeric: tabular-nums; }
 .clock time { color: var(--paper); }
@@ -129,18 +131,27 @@ main { display: contents; }
 
 .plot figcaption {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 6px 18px;
+  gap: 16px;
+  min-width: 0;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+
+.plot figcaption > * { flex: none; white-space: nowrap; }
 
 .plot figcaption b {
   color: var(--paper);
   font-weight: 500;
 }
 
+.plot figcaption .status {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .status::before {
   content: "";
   display: inline-block;
@@ -150,31 +161,46 @@ main { display: contents; }
   background: var(--muted);
   vertical-align: 1px;
 }
-.status { min-width: 13ch; }
 .status[data-phase="moving"]::before { background: var(--saffron); }
 .status[data-phase="settled"]::before { background: var(--paper); }
 
 .next {
   margin-left: auto;
+  -webkit-appearance: none;
+  appearance: none;
   font: inherit;
+  line-height: 1;
   color: var(--paper);
   background: transparent;
   border: 1px solid var(--axis);
   border-radius: 999px;
-  padding: 6px 11px 6px 14px;
-  cursor: pointer;
+  min-height: 32px;
+  padding: 0 12px 0 14px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  cursor: pointer;
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition: background-color 160ms ease, border-color 160ms ease;
 }
-.next:hover { background: rgba(238, 241, 255, 0.1); border-color: var(--paper); }
-.next:active { background: rgba(238, 241, 255, 0.18); }
+.next:active { background: rgba(238, 241, 255, 0.18); border-color: var(--paper); }
 .next svg {
+  flex: none;
+  display: block;
   width: 13px; height: 13px;
   fill: none; stroke: currentColor; stroke-width: 1.6;
   stroke-linecap: round; stroke-linejoin: round;
+}
+
+@media (hover: hover) {
+  .next:hover { background: rgba(238, 241, 255, 0.1); border-color: var(--paper); }
+}
+
+@media (max-width: 440px) {
+  .plot figcaption { gap: 12px; }
+  .plot figcaption .count { display: none; }
 }
 
 /* ---------- identity + legend ---------- */
@@ -250,7 +276,6 @@ h1 {
   transition: background-color 140ms ease;
 }
 
-.legend a:hover,
 .legend a:focus-visible { background: rgba(238, 241, 255, 0.1); }
 
 .legend .label { overflow-wrap: anywhere; }
@@ -266,13 +291,18 @@ h1 {
   color: var(--muted);
   transition: transform 160ms ease, color 160ms ease;
 }
-.legend a:hover .go { color: var(--paper); transform: translateX(2px); }
 
 .marker { width: 12px; height: 12px; display: block; transition: transform 160ms ease; }
-.legend a:hover .marker, .legend a:focus-visible .marker { transform: scale(1.35); }
+.legend a:focus-visible .marker { transform: scale(1.35); }
 .marker.s0 { fill: var(--paper); }
 .marker.s1 { fill: var(--saffron); }
 .marker.s2 { fill: var(--coral); }
+
+@media (hover: hover) {
+  .legend a:hover { background: rgba(238, 241, 255, 0.1); }
+  .legend a:hover .go { color: var(--paper); transform: translateX(2px); }
+  .legend a:hover .marker { transform: scale(1.35); }
+}
 
 @media (max-width: 760px) {
   .page { grid-template-rows: auto auto auto; align-content: start; }
