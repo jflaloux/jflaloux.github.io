@@ -1,0 +1,276 @@
+/* Layout: the viewport is one chart. A gridded plot where data points assemble
+   the name fills the screen; identity and links sit underneath as caption and legend. */
+:root {
+  --field: #1531c9;       /* cobalt plot ground */
+  --field-deep: #0c1f8f;  /* vignette edge */
+  --grid: rgba(214, 222, 255, 0.11);
+  --axis: rgba(214, 222, 255, 0.42);
+  --paper: #eef1ff;       /* text + series A */
+  --muted: #b3beff;       /* labels, secondary text */
+  --saffron: #ffc94d;     /* series B, focus */
+  --coral: #ff6a4d;       /* series C */
+
+  --font-display: "Bricolage Grotesque", "Arial Narrow", system-ui, sans-serif;
+  --font-mono: "Martian Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --step--1: clamp(0.66rem, 0.63rem + 0.12vw, 0.74rem);
+  --step-0: clamp(0.94rem, 0.9rem + 0.2vw, 1.06rem);
+  --step-3: clamp(2.1rem, 1.4rem + 3.4vw, 4.4rem);
+
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  height: 100%;
+  background: var(--field-deep);
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  color: var(--paper);
+  background:
+    radial-gradient(120% 95% at 50% 32%, var(--field) 0%, var(--field) 42%, var(--field-deep) 100%);
+  font-family: var(--font-display);
+  font-size: var(--step-0);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--saffron);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0; border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-stretch: 87.5%;
+  font-size: var(--step--1);
+  letter-spacing: 0.02em;
+}
+
+/* ---------- page frame ---------- */
+
+main { display: contents; }
+
+.page {
+  min-height: 100vh;
+  min-height: 100svh;
+  max-width: 1480px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: clamp(14px, 2.6vh, 30px);
+  padding-inline: clamp(16px, 4vw, 56px);
+  padding-block: clamp(16px, 3vh, 36px);
+}
+
+.topbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px 24px;
+  color: var(--muted);
+}
+
+.topbar a {
+  color: var(--paper);
+  text-decoration: none;
+  font-weight: 500;
+}
+.topbar a:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+.clock { margin: 0; font-variant-numeric: tabular-nums; }
+.clock time { color: var(--paper); }
+
+/* ---------- the plot ---------- */
+
+.plot {
+  margin: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 10px;
+  min-height: 0;
+}
+
+.plot-area {
+  position: relative;
+  min-height: 230px;
+}
+
+.plot-area canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: pan-y;
+  cursor: crosshair;
+}
+
+.plot figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 18px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.plot figcaption b {
+  color: var(--paper);
+  font-weight: 500;
+}
+
+.status::before {
+  content: "";
+  display: inline-block;
+  width: 7px; height: 7px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  vertical-align: 1px;
+}
+.status { min-width: 11ch; }
+.status[data-phase="sorting"]::before { background: var(--saffron); }
+.status[data-phase="sorted"]::before { background: var(--paper); }
+
+.replay {
+  margin-left: auto;
+  font: inherit;
+  color: var(--paper);
+  background: transparent;
+  border: 1px solid var(--axis);
+  border-radius: 999px;
+  padding: 5px 12px 5px 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+.replay:hover { background: rgba(238, 241, 255, 0.1); border-color: var(--paper); }
+.replay svg { width: 12px; height: 12px; }
+
+/* ---------- identity + legend ---------- */
+
+.card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 22px 56px;
+  padding-top: clamp(14px, 2.4vh, 26px);
+  border-top: 1px solid var(--axis);
+}
+
+.who { min-width: 0; }
+
+h1 {
+  margin: 0;
+  font-size: var(--step-3);
+  font-weight: 700;
+  font-stretch: 84%;
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.role {
+  margin: 14px 0 0;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.7;
+}
+.role span { white-space: nowrap; }
+.role span:not(:last-child)::after {
+  content: "/";
+  margin: 0 0.7em;
+  color: var(--axis);
+}
+
+.legend {
+  min-width: 0;
+  border: 1px solid var(--axis);
+  border-radius: 4px;
+  padding: 10px 6px 6px;
+  background: rgba(12, 31, 143, 0.35);
+}
+
+.legend-title {
+  margin: 0 10px 6px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.legend ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.legend a {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 10px;
+  border-radius: 3px;
+  text-decoration: none;
+  font-size: var(--step-0);
+  font-weight: 500;
+  transition: background-color 140ms ease;
+}
+
+.legend a:hover,
+.legend a:focus-visible { background: rgba(238, 241, 255, 0.1); }
+
+.legend .label { overflow-wrap: anywhere; }
+
+.legend .go {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  color: var(--muted);
+  transition: transform 160ms ease, color 160ms ease;
+}
+.legend a:hover .go { color: var(--paper); transform: translateX(2px); }
+
+.marker { width: 12px; height: 12px; display: block; transition: transform 160ms ease; }
+.legend a:hover .marker, .legend a:focus-visible .marker { transform: scale(1.35); }
+.marker.s0 { fill: var(--paper); }
+.marker.s1 { fill: var(--saffron); }
+.marker.s2 { fill: var(--coral); }
+
+@media (max-width: 760px) {
+  .page { grid-template-rows: auto auto auto; align-content: start; }
+  .plot-area { min-height: 0; aspect-ratio: 4 / 3; max-width: 100%; }
+  .card { grid-template-columns: 1fr; align-items: start; }
+  .legend { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+}

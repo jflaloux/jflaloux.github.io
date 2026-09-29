@@ -1,55 +1,119 @@
-<!DOCTYPE HTML>
-<!--
-	Aerial by HTML5 UP
-	html5up.net | @n33co
-	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
--->
-<html>
-	<head>
-		<title>Jean-Francois Laloux</title>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<!--[if lte IE 8]><script src="assets/js/ie/html5shiv.js"></script><![endif]-->
-		<link rel="stylesheet" href="assets/css/main.css" />
-		<!--[if lte IE 8]><link rel="stylesheet" href="assets/css/ie8.css" /><![endif]-->
-		<!--[if lte IE 9]><link rel="stylesheet" href="assets/css/ie9.css" /><![endif]-->
-		<meta name="google-site-verification" content="4nco9G_VgHIvY8h3_Mqw4kfpG0r2QmccVc_ogdpHZKA" />
-		<script>
-  		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-		  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-		  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-		  })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
-		  ga('create', 'UA-8723436-1', 'auto');
-		  ga('send', 'pageview');
-		 </script>
-	</head>
-	<body class="loading">
-		<div id="wrapper">
-			<div id="bg"></div>
-			<div id="overlay"></div>
-			<div id="main">
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Jean-François Laloux</title>
+  <meta name="description" content="Jean-François Laloux: development, business intelligence and data visualization.">
+  <meta name="author" content="Jean-François Laloux">
+  <meta name="theme-color" content="#1531c9">
+  <meta name="color-scheme" content="dark">
+  <meta name="google-site-verification" content="4nco9G_VgHIvY8h3_Mqw4kfpG0r2QmccVc_ogdpHZKA">
+  <link rel="canonical" href="https://laloux.me/">
 
-				<!-- Header -->
-					<header id="header">
-						<h1>Jean-Francois Laloux</h1>
-						<p>Development &nbsp;&bull;&nbsp; Business Intelligence &nbsp;&bull;&nbsp; Data Viz</p>
-						<nav>
-							<ul>
-								<li><a href="https://www.facebook.com/jflaloux" class="icon fa-facebook"><span class="label">Facebook</span></a></li>
-								<li><a href="https://br.linkedin.com/in/jeanfrancoislaloux" class="icon fa-linkedin"><span class="label">Github</span></a></li>
-								<li><a href="mailto:jeanfrancois@laloux.me" class="icon fa-envelope-o"><span class="label">Email</span></a></li>
-							</ul>
-						</nav>
-					</header>
+  <meta property="og:type" content="profile">
+  <meta property="og:url" content="https://laloux.me/">
+  <meta property="og:title" content="Jean-François Laloux">
+  <meta property="og:description" content="Development, business intelligence and data visualization.">
+  <meta property="og:image" content="https://laloux.me/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
 
-				<!-- Footer -->
-			</div>
-		</div>
-		<!--[if lte IE 8]><script src="assets/js/ie/respond.min.js"></script><![endif]-->
-		<script>
-			window.onload = function() { document.body.className = ''; }
-			window.ontouchmove = function() { return false; }
-			window.onorientationchange = function() { document.body.scrollTop = 0; }
-		</script>
-	</body>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico" sizes="32x32">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,400..800&amp;family=Martian+Mono:wdth,wght@75..112.5,400..600&amp;display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "Jean-François Laloux",
+    "url": "https://laloux.me/",
+    "email": "mailto:jeanfrancois@laloux.me",
+    "knowsAbout": ["Software development", "Business intelligence", "Data visualization"],
+    "sameAs": [
+      "https://www.linkedin.com/in/jeanfrancoislaloux",
+      "https://github.com/jflaloux"
+    ]
+  }
+  </script>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar mono">
+      <a href="./">laloux.me</a>
+      <p class="clock">São Paulo <time id="clock">--:--</time> UTC−3</p>
+    </header>
+
+    <main>
+      <figure class="plot">
+        <div class="plot-area">
+          <canvas id="plot" data-word="laloux" aria-hidden="true"></canvas>
+        </div>
+        <figcaption class="mono">
+          <b>Fig. 1</b>
+          <span>n = <span id="count">0</span></span>
+          <span class="status" id="status" data-phase="unsorted" aria-live="polite">unsorted</span>
+          <span class="sr-only">A scatter plot of random data points that sort themselves into the word laloux.</span>
+          <button class="replay" id="replay" type="button">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.6 6.2A6 6 0 1 0 14 9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M14.2 2.4v4.2H10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Replay
+          </button>
+        </figcaption>
+      </figure>
+
+      <section class="card" aria-label="About">
+        <div class="who">
+          <h1>Jean-François Laloux</h1>
+          <p class="role mono"><span>Development</span> <span>Business Intelligence</span> <span>Data Visualization</span></p>
+        </div>
+
+        <nav class="legend" aria-label="Contact">
+          <p class="legend-title mono">Legend</p>
+          <ul>
+            <li>
+              <a href="https://www.linkedin.com/in/jeanfrancoislaloux" data-series="1" rel="me">
+                <svg class="marker s1" viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="1" width="10" height="10"/></svg>
+                <span class="label">LinkedIn</span>
+                <svg class="go" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/></svg>
+              </a>
+            </li>
+            <li>
+              <a href="https://github.com/jflaloux" data-series="2" rel="me">
+                <svg class="marker s2" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .5 11.5 11h-11z"/></svg>
+                <span class="label">GitHub</span>
+                <svg class="go" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/></svg>
+              </a>
+            </li>
+            <li>
+              <a href="mailto:jeanfrancois@laloux.me" data-series="0">
+                <svg class="marker s0" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5"/></svg>
+                <span class="label">jeanfrancois@laloux.me</span>
+                <svg class="go" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9.5 4l4 4-4 4"/></svg>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const el = document.getElementById("clock");
+      if (!el) return;
+      const f = new Intl.DateTimeFormat("en-GB", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" });
+      const tick = () => { el.textContent = f.format(new Date()); };
+      tick();
+      setInterval(tick, 15000);
+    })();
+  </script>
+  <script src="assets/plot.js" defer></script>
+</body>
 </html>
