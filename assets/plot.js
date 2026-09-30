@@ -83,6 +83,12 @@
   }
 
   const byX = (a, b) => a.x - b.x;
+
+  // Google Analytics event, if the tag loaded (blocked or offline: do nothing).
+  const track = (name, params) => {
+    if (typeof window.gtag === "function") window.gtag("event", name, params);
+  };
+
   const dotR = (pitch) => clamp(pitch * 0.34, 1.1, 3.2);
 
   // Trend line of the scatter plot, as a fraction of plot height from the top.
@@ -358,10 +364,12 @@
     else draw();
   }
 
-  function goTo(i) {
+  // `input` is set when a person asked for the change (button, tap, click); auto-cycling leaves it empty.
+  function goTo(i, input) {
     const fromDonut = FORMS[formIdx].id === "donut";
     formIdx = (i + FORMS.length) % FORMS.length;
     assign(formIdx, !reduced(), fromDonut);
+    if (input) track("chart_next", { chart_type: FORMS[formIdx].id, input_method: input });
     schedule();
   }
 
@@ -605,8 +613,14 @@
     }
   });
 
+  let dragTracked = false;
+
   canvas.addEventListener("pointermove", (e) => {
     if (e.pointerType !== "mouse" && !down) return;
+    if (e.pointerType !== "mouse" && !dragTracked && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 12) {
+      dragTracked = true;
+      track("chart_drag", { chart_type: FORMS[formIdx].id });
+    }
     pointer = localPoint(e);
     refresh();
   });
@@ -622,7 +636,7 @@
     const moved = Math.hypot(e.clientX - d.x, e.clientY - d.y);
     if (moved < 10 && performance.now() - d.t < 450) {
       intro = false;
-      goTo(formIdx + 1);
+      goTo(formIdx + 1, e.pointerType === "mouse" ? "click" : "tap");
     }
   }
 
@@ -637,7 +651,7 @@
   if (nextBtn) {
     nextBtn.addEventListener("click", () => {
       intro = false;
-      goTo(formIdx + 1);
+      goTo(formIdx + 1, "button");
     });
   }
 

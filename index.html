@@ -3,6 +3,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-HPDEY2TBJ3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-HPDEY2TBJ3');
+
+    // contact_click: LinkedIn, GitHub or email link in the legend
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[data-track]');
+      if (a) gtag('event', 'contact_click', { contact_method: a.dataset.track, link_url: a.href });
+    });
+  </script>
   <title>Jean-François Laloux</title>
   <meta name="description" content="Jean-François Laloux: business and market intelligence, AI agents for data, e-commerce and retail.">
   <meta name="author" content="Jean-François Laloux">
@@ -79,21 +94,21 @@
           <p class="legend-title mono">Legend</p>
           <ul>
             <li>
-              <a href="https://www.linkedin.com/in/jeanfrancoislaloux" data-series="1" rel="me">
+              <a href="https://www.linkedin.com/in/jeanfrancoislaloux" data-track="linkedin" data-series="1" rel="me">
                 <svg class="marker s1" viewBox="0 0 12 12" aria-hidden="true"><rect x="1" y="1" width="10" height="10"/></svg>
                 <span class="label">LinkedIn</span>
                 <svg class="go" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/></svg>
               </a>
             </li>
             <li>
-              <a href="https://github.com/jflaloux" data-series="2" rel="me">
+              <a href="https://github.com/jflaloux" data-track="github" data-series="2" rel="me">
                 <svg class="marker s2" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 .5 11.5 11h-11z"/></svg>
                 <span class="label">GitHub</span>
                 <svg class="go" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/></svg>
               </a>
             </li>
             <li>
-              <a href="mailto:jeanfrancois@laloux.me" data-series="0">
+              <a href="mailto:jeanfrancois@laloux.me" data-track="email" data-series="0">
                 <svg class="marker s0" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="5"/></svg>
                 <span class="label">jeanfrancois@laloux.me</span>
                 <svg class="go" viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 8h11M9.5 4l4 4-4 4"/></svg>
@@ -115,6 +130,6 @@
       setInterval(tick, 15000);
     })();
   </script>
-  <script src="assets/plot.js?v=a7744fad" defer></script>
+  <script src="assets/plot.js?v=aa69b8a2" defer></script>
 </body>
 </html>
